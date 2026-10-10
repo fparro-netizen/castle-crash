@@ -8,3 +8,9 @@ An original physics puzzle game for iPhone (and any browser). Drag back from the
 - No ads, no purchases, no tracking
 
 Built with HTML5 canvas and [Matter.js](https://brm.io/matter-js/) (MIT, bundled in `js/`).
+
+**Play:** https://fparro-netizen.github.io/castle-crash/ (published from the `fparro-netizen.github.io` repo).
+
+## Tests
+- `node test/sim.js <levelIndex>` checks a level is stable at rest and finds a winning shot sequence within its ball limit using the real game core.
+- `node test/e2e.js <url>` plays the game in an iPhone-sized headless browser (touch and mouse aiming, every level, offline reload).
