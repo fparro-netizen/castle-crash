@@ -19,12 +19,13 @@ const out = { level: li + 1, name: L.name, goal: L.goal, par: L.par, stability: 
 if (mode !== 'stab') {
   const g = createGame(RAPIER, L);
   const seq = []; let t0 = Date.now();
-  for (let k = 0; k < 30 && g.phase === 'play'; k++) {
+  for (let k = 0; k < 80 && g.phase === 'play'; k++) {
     const snap = g.snapshot();
     const live = g.pieces.filter(p => !p.off && !p.gone);
     const pos = live.map(p => g.world.getRigidBody(p.h).translation());
     // candidates: sample live pieces (bias to low and central ones) + a few on the bonus crowns
     let cands = pos.map(t => ({ x: t.x, y: t.y, z: t.z }));
+    if (cands.length <= 12) cands = cands.flatMap(c => [c, { x: c.x - 0.25, y: c.y, z: c.z }, { x: c.x + 0.25, y: c.y, z: c.z }, { x: c.x, y: c.y + 0.2, z: c.z }]);
     if (cands.length > 36) { cands.sort((a, b) => a.y - b.y); const step = cands.length / 36; cands = Array.from({ length: 36 }, (_, i) => cands[Math.floor(i * step)]); }
     let best = null;
     for (const c of cands) {
