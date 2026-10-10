@@ -1,0 +1,45 @@
+name: Build icons and publish to GitHub Pages
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+concurrency:
+  group: pages
+  cancel-in-progress: false
+jobs:
+  icons:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Decode PNG icons from base64 sources
+        run: |
+          for f in icons/*.png.b64; do base64 -d "$f" > "${f%.b64}"; done
+          ls -la icons
+          git config user.name "castle-crash-bot"
+          git config user.email "castle-crash-bot@users.noreply.github.com"
+          git add icons/*.png
+          git diff --cached --quiet || (git commit -m "Build PNG icons" && git push)
+  deploy:
+    needs: icons
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - name: Decode icons
+        run: for f in icons/*.png.b64; do base64 -d "$f" > "${f%.b64}"; done
+      - uses: actions/configure-pages@v5
+        with:
+          enablement: true
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: .
+      - id: deployment
+        uses: actions/deploy-pages@v4
