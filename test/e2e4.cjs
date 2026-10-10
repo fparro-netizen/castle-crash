@@ -46,6 +46,13 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
     const st = await page.evaluate((p0) => { const a = JSON.parse(p0), b = CastleCrash.game.positions(); let m = 0; a.forEach((p, k) => { if (p && b[k]) m = Math.max(m, Math.hypot(p.x - b[k].x, p.y - b[k].y, p.z - b[k].z)); }); return { off: CastleCrash.game.off, maxMove: +m.toFixed(3) }; }, p0);
     if (i === 17) await page.screenshot({ path: OUT + 'shot-stack-before.png' });
     const rv = await page.isVisible('#btn-restart'); const barText = await page.evaluate(() => document.getElementById('bar-text').textContent);
+    if (i === 17 || i === 9) { // mid-play restart check on a big level: one shot, restart while pieces are still falling
+      await page.evaluate(([x, y, z]) => CastleCrash.fireWorldDirect(x, y, z), SOL[i][0]); await sleep(1200);
+      const mid = await page.evaluate(() => ({ shots: CastleCrash.game.shots, phase: CastleCrash.game.phase }));
+      const bt = await page.isVisible('#btn-restart'); await page.tap('#btn-restart'); await sleep(2500);
+      const ok = await page.evaluate(() => CastleCrash.game.shots === 0 && CastleCrash.game.off === 0 && CastleCrash.mode === 'game');
+      console.log('  restart mid-level', i + 1, JSON.stringify(mid), 'visible', bt, 'reset ok', ok);
+    }
     let n = 0;
     for (const [x, y, z] of (SOL[i] || [])) {
       if (await page.evaluate(() => CastleCrash.game.phase !== 'play')) break;
@@ -54,12 +61,6 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
       else await sleep(3000);
     }
     let extra = 0;
-    if (i === 17 || i === 9) { // mid-level restart check on a big level
-      const bt = await page.isVisible('#btn-restart'); await page.tap('#btn-restart'); await sleep(2500);
-      const ok = await page.evaluate(() => CastleCrash.game.shots === 0 && CastleCrash.game.off === 0 && CastleCrash.mode === 'game');
-      console.log('  restart mid-level', i + 1, 'visible', bt, 'reset ok', ok);
-      for (const [x, y, z] of (SOL[i] || [])) { if (await page.evaluate(() => CastleCrash.game.phase !== 'play')) break; await page.evaluate(([x, y, z]) => CastleCrash.fireWorldDirect(x, y, z), [x, y, z]); await sleep(3000); }
-    }
     while (extra < 40 && await page.evaluate(() => CastleCrash.game.phase === 'play')) {
       await page.evaluate(() => { const g = CastleCrash.game; const live = g.pieces.filter(p => !p.off && !p.gone).map(p => g.world.getRigidBody(p.h).translation()); live.sort((a, b) => a.y - b.y); const t = live[Math.floor(Math.random() * Math.min(live.length, 6))]; CastleCrash.fireWorldDirect(t.x, t.y, t.z); });
       extra++; await sleep(3000);
